@@ -3,10 +3,13 @@ services:
   app:
     build:
       args:
-        user: sammy
+        user: yo
         uid: 1000
       context: ./
       dockerfile: Dockerfile.dev
+    image: lsp-image
+    container_name: lsp-container
+    restart: unless-stopped
     working_dir: /var/www/
     environment:
       - COMPOSER_MEMORY_LIMIT=-1
@@ -15,15 +18,18 @@ services:
     volumes:
       - ./:/var/www
     networks:
-      - lahmi
+      - lsp
 
   db:
-    image: mysql:5.7
+    restart: unless-stopped
+    image: mysql:8.0
+    container_name: lsp-db-container
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_DATABASE: lsp
+      MYSQL_ROOT_USER: root
+      MYSQL_ROOT_PASSWORD: 1
+     # MYSQL_PASSWORD: ${DB_PASSWORD}
+     # MYSQL_USER: ${DB_USERNAME}
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
     volumes:
@@ -33,12 +39,15 @@ services:
     ports:
       - 3307:3306
     networks:
-      - lahmi
+      - lsp
 
   nginx:
+    restart: unless-stopped
     image: nginx:alpine
+    container_name: lsp-nginx-container
     ports:
-      - 8005:80
+      - 8000:80
+      - 443:443
     depends_on:
       - db
       - app
@@ -46,13 +55,12 @@ services:
       - ./:/var/www
       - ./docker-compose/nginx:/etc/nginx/conf.d/
     networks:
-      - lahmi
+      - lsp
 
 networks:
-  lahmi:
+  lsp:
     driver: bridge
 
 volumes:
   dbdata:
     driver: local
-
